@@ -185,6 +185,10 @@
       b.className = 'banner bad';
       b.innerHTML = '<b>R2 no está configurado.</b> Podés recorrer el panel, pero no se puede publicar hasta cargar las variables de entorno en Vercel (ver README).';
       b.hidden = false;
+    } else if (meta.r2Error) {
+      b.className = 'banner bad';
+      b.innerHTML = '<b>No se pudo leer el bucket de R2 (' + esc(meta.r2Error) + ').</b> Revisá en Vercel R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY y R2_BUCKET, y que el token tenga permiso de lectura y escritura sobre ese bucket. Mientras tanto se muestran datos de ejemplo.';
+      b.hidden = false;
     } else if (!meta.stored) {
       b.className = 'banner';
       b.innerHTML = 'Estás viendo <b>datos de ejemplo</b>. Al publicar por primera vez se guardan en tu bucket de R2.';

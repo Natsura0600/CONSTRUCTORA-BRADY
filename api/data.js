@@ -7,16 +7,22 @@ const KEY = 'site/data.json';
 
 async function load() {
   if (!r2.configured()) return { data: seed(), stored: false };
-  const stored = await r2.getJson(KEY);
-  return stored ? { data: stored, stored: true } : { data: seed(), stored: false };
+  try {
+    const stored = await r2.getJson(KEY);
+    return stored ? { data: stored, stored: true } : { data: seed(), stored: false };
+  } catch (e) {
+    // Si R2 falla (credenciales, bucket, permisos) el sitio igual se muestra con los datos iniciales.
+    console.error('R2 lectura', e);
+    return { data: seed(), stored: false, error: (e && (e.name || e.Code)) || 'Error' };
+  }
 }
 
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
-      const { data, stored } = await load();
+      const { data, stored, error } = await load();
       res.setHeader('Cache-Control', req.query && req.query.fresh ? 'no-store' : 'public, s-maxage=10, stale-while-revalidate=60');
-      res.status(200).json({ ...data, _meta: { r2: r2.configured(), stored } });
+      res.status(200).json({ ...data, _meta: { r2: r2.configured(), stored, r2Error: error || null } });
       return;
     }
 
@@ -63,6 +69,6 @@ module.exports = async (req, res) => {
     res.status(405).json({ error: 'Método no permitido' });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Error del servidor. Revisá los logs en Vercel.' });
+    res.status(500).json({ error: 'Error del servidor' + (e && (e.name || e.Code) ? ' (' + (e.name || e.Code) + ')' : '') + '. Revisá las variables R2_* y los logs en Vercel.' });
   }
 };
