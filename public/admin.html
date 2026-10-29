@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Panel · Administración del sitio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='14' width='7' height='14' fill='%231f4fbf'/%3E%3Crect x='13' y='4' width='7' height='24' fill='%230a2540'/%3E%3Crect x='22' y='10' width='7' height='18' fill='%231f4fbf'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="adm">
+  <div id="login" class="login" hidden>
+    <form id="loginForm" class="login-card">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <h1>Panel de administración</h1>
+      <p class="muted">Ingresá con la contraseña del sitio para editar torres, unidades y avisos.</p>
+      <label>Contraseña<input type="password" id="pw" autocomplete="current-password" required autofocus></label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <button class="btn" type="submit">Ingresar</button>
+      <a href="/" class="back">Volver al sitio</a>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <aside class="side">
+      <a class="brand" href="/" title="Ver el sitio"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span id="sideName">Panel</span></a>
+      <nav id="sideNav" aria-label="Secciones"></nav>
+      <button class="link" id="logout">Cerrar sesión</button>
+    </aside>
+    <main class="main">
+      <div class="banner" id="banner" hidden></div>
+      <div id="view"></div>
+    </main>
+    <div class="savebar" id="savebar" hidden>
+      <span>Tenés cambios sin publicar</span>
+      <button class="btn ghost sm" id="discard">Descartar</button>
+      <button class="btn sm" id="save">Publicar cambios</button>
+    </div>
+  </div>
+
+  <dialog class="modal" id="dlg"></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>
