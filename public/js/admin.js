@@ -1,5 +1,6 @@
 (function () {
-  const { esc, STATUS_LABEL, applyTheme, towerSVG, SHAPE_NAMES, stat, api, money } = window.C;
+  const { opts, esc, STATUS_LABEL, applyTheme, towerSVG, SHAPE_NAMES, stat, api, money } = window.C;
+  opts.showPrices = true; // en el panel siempre se ve el precio cargado
   const $ = (s, r = document) => r.querySelector(s);
 
   let D = null;
@@ -9,21 +10,26 @@
   let section = 'dash';
   let selTower = 0;
   let unitFilter = 'all';
+  let selLoteo = 0;
+  let lotFilter = 'all';
   let token = sessionStorage.getItem('adm_token') || '';
 
   const SECTIONS = [
     ['dash', 'Resumen'],
-    ['towers', 'Torres'],
+    ['towers', 'Edificio'],
     ['units', 'Unidades'],
+    ['loteos', 'Loteos'],
+    ['lots', 'Lotes'],
+    ['nearby', 'Cercanías'],
     ['notices', 'Avisos'],
     ['company', 'Empresa y ubicación'],
     ['theme', 'Colores']
   ];
   const PRESETS = [
-    ['Azul clásico', { primary: '#1f4fbf', dark: '#0a2540', accent: '#5b8def' }],
-    ['Marino profundo', { primary: '#173f7a', dark: '#07182e', accent: '#4a7fd1' }],
-    ['Celeste', { primary: '#2478c9', dark: '#0f3557', accent: '#7bb4ec' }],
-    ['Índigo', { primary: '#2f3fa8', dark: '#121a45', accent: '#7385e6' }]
+    ['Quinzo (arena y carbón)', { primary: '#7a6a5b', dark: '#2b2724', accent: '#b9a590' }],
+    ['Beige cálido', { primary: '#8c7863', dark: '#33291f', accent: '#cdb89d' }],
+    ['Grafito', { primary: '#55504b', dark: '#1c1a19', accent: '#a8a29a' }],
+    ['Azul clásico', { primary: '#1f4fbf', dark: '#0a2540', accent: '#5b8def' }]
   ];
 
   const uid = (p) => p + Math.random().toString(36).slice(2, 9);
@@ -43,6 +49,9 @@
     let o = obj;
     for (let i = 0; i < p.length - 1; i++) o = o[p[i]];
     o[p[p.length - 1]] = val;
+  }
+  function getPath(obj, path) {
+    return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
   }
   function markDirty() {
     dirty = true;
@@ -104,10 +113,13 @@
     meta = r._meta || {};
     delete r._meta;
     D = r;
+    D.nearby = D.nearby || [];
+    D.loteos = D.loteos || [];
     version = r.updatedAt || 0;
     dirty = false;
     $('#savebar').hidden = true;
     if (selTower >= D.towers.length) selTower = 0;
+    if (selLoteo >= D.loteos.length) selLoteo = 0;
     applyTheme(D.theme);
     $('#sideName').textContent = D.company.name;
     renderNav();
@@ -178,7 +190,7 @@
       b.innerHTML = 'Estás viendo <b>datos de ejemplo</b>. Al publicar por primera vez se guardan en tu bucket de R2.';
       b.hidden = false;
     } else b.hidden = true;
-    const fn = { dash: vDash, towers: vTowers, units: vUnits, notices: vNotices, company: vCompany, theme: vTheme }[section];
+    const fn = { dash: vDash, towers: vTowers, units: vUnits, loteos: vLoteos, lots: vLots, nearby: vNearby, notices: vNotices, company: vCompany, theme: vTheme }[section];
     view.innerHTML = fn();
   }
 
@@ -186,9 +198,10 @@
   const fld = (label, path, val, o = {}) => {
     const type = o.type || 'text';
     const extra = o.num ? ' data-num' : '';
+    const fmt = o.fmt ? ` data-fmt="${o.fmt}"` : '';
     const attrs = `${o.min != null ? ` min="${o.min}"` : ''}${o.max != null ? ` max="${o.max}"` : ''}${o.step ? ` step="${o.step}"` : ''}${o.ph ? ` placeholder="${esc(o.ph)}"` : ''}`;
     const hint = o.hint ? `<small>${o.hint}</small>` : '';
-    if (type === 'textarea') return `<label class="fld ${o.cls || ''}">${label}<textarea data-path="${path}" maxlength="${o.max || 1500}">${esc(val)}</textarea>${hint}</label>`;
+    if (type === 'textarea') return `<label class="fld ${o.cls || ''}">${label}<textarea data-path="${path}"${fmt} maxlength="${o.max || 1500}">${esc(val)}</textarea>${hint}</label>`;
     return `<label class="fld ${o.cls || ''}">${label}<input type="${type}" data-path="${path}"${extra} value="${esc(val)}"${attrs}>${hint}</label>`;
   };
   const sel = (label, path, val, opts, cls) =>
@@ -207,16 +220,16 @@
           .map(([l, n, k]) => `<div><div class="muted" style="font-size:.9rem">${l}</div><b style="font-family:var(--font-display);font-stretch:112%;font-size:2.2rem;${k ? `color:var(--st-${k})` : ''}">${n}</b></div>`)
           .join('')}
       </div>
-      <div class="panel"><h3>Por torre</h3>
+      <div class="panel"><h3>Por edificio</h3>
         ${D.towers.length ? D.towers
           .map((t) => {
             const x = stat(t.units);
             const tot = x.total || 1;
-            return `<div class="sumrow"><div><b>${esc(t.name)}</b><br><span class="muted" style="font-size:.88rem">Obra al ${t.progress}%</span></div>
+            return `<div class="sumrow"><div><b>${esc(t.name)}</b><br><span class="muted" style="font-size:.88rem">${t.progress ? 'Obra al ' + t.progress + '%' : 'Sin avance cargado'}</span></div>
               <div class="split"><i style="width:${(x.sold / tot) * 100}%;background:var(--st-sold)"></i><i style="width:${(x.reserved / tot) * 100}%;background:var(--st-reserved)"></i><i style="width:${(x.available / tot) * 100}%;background:var(--st-available)"></i></div>
               <div class="nums">${x.available} disp. · ${x.reserved} res. · ${x.sold} vend.</div></div>`;
           })
-          .join('') : '<p class="muted">Todavía no hay torres. Creá la primera desde la sección Torres.</p>'}
+          .join('') : '<p class="muted">Todavía no hay edificios. Creá el primero desde la sección Edificio.</p>'}
       </div>
       <div class="panel"><h3>Cómo se usa</h3>
         <p class="muted">Editá lo que necesites y presioná <b>Publicar cambios</b>. Nada se ve en el sitio hasta que publiques. Cada publicación guarda una copia de la versión anterior en tu bucket de R2.</p></div>`;
@@ -224,8 +237,8 @@
 
   /* ---------- Torres ---------- */
   function vTowers() {
-    return `<header><div><h1>Torres</h1><p>Nombre, avance de obra y forma del edificio. La silueta se pinta según el porcentaje.</p></div>
-      <button class="btn sm" data-act="add-tower">Agregar torre</button></header>
+    return `<header><div><h1>Edificio</h1><p>Datos, textos, fotos, terminaciones y tipologías del edificio.</p></div>
+      <button class="btn sm" data-act="add-tower">Agregar edificio</button></header>
       ${D.towers
         .map(
           (t, i) => `<div class="panel tcard" data-ti="${i}">
@@ -240,23 +253,33 @@
             <label class="fld">Avance de obra: <b id="pv-${i}">${t.progress}%</b>
               <input type="range" min="0" max="100" step="1" value="${t.progress}" data-path="towers.${i}.progress" data-num></label>
             ${fld('Descripción', `towers.${i}.description`, t.description, { type: 'textarea', cls: 'full', max: 700 })}
+            ${fld('Datos destacados (uno por línea: Título | texto)', `towers.${i}.highlights`, (t.highlights || []).map((h) => h.title + ' | ' + h.text).join('\n'), { type: 'textarea', cls: 'full', max: 2400, fmt: 'pairs:title,text' })}
+            ${fld('Tipología / bloques (uno por línea: Nombre | texto | niveles)', `towers.${i}.blocks`, (t.blocks || []).map((b) => [b.name, b.text, b.levels].join(' | ')).join('\n'), { type: 'textarea', cls: 'full', max: 2400, fmt: 'pairs:name,text,levels', hint: 'Las fotos de cada bloque no se cambian desde acá.' })}
+            ${fld('Terminaciones de unidades (uno por línea: Título | texto)', `towers.${i}.finishUnits`, (t.finishUnits || []).map((h) => h.title + ' | ' + h.text).join('\n'), { type: 'textarea', cls: 'full', max: 6000, fmt: 'pairs:title,text' })}
+            ${fld('Terminaciones generales del complejo (una por línea)', `towers.${i}.finishComplex`, (t.finishComplex || []).join('\n'), { type: 'textarea', cls: 'full', max: 3000, fmt: 'lines' })}
           </div>
+          <div style="margin-top:1rem"><h3 style="margin-bottom:.7rem">Galería</h3>
+            <div class="photos">${(t.gallery || []).map((ph, k) => `<div class="pitem"><img src="${esc(ph)}" alt=""><div>
+              <button class="btn ghost" data-act="g-left" data-i="${i}" data-k="${k}" aria-label="Mover a la izquierda">‹</button>
+              <button class="btn ghost" data-act="g-right" data-i="${i}" data-k="${k}" aria-label="Mover a la derecha">›</button>
+              <button class="btn danger" data-act="g-del" data-i="${i}" data-k="${k}" aria-label="Quitar foto">×</button></div></div>`).join('')}
+              <label class="dz">Subir fotos<input type="file" accept="image/*" multiple data-upload="gallery" data-i="${i}"></label></div></div>
           <div class="coverbox" style="margin-top:1rem">
             ${t.image ? `<img src="${esc(t.image)}" alt="">` : ''}
-            <label class="dz">${t.image ? 'Cambiar foto de la obra' : 'Subir foto de la obra'}<input type="file" accept="image/*" data-upload="cover" data-i="${i}"></label>
+            <label class="dz">${t.image ? 'Cambiar foto principal' : 'Subir foto principal'}<input type="file" accept="image/*" data-upload="cover" data-i="${i}"></label>
             ${t.image ? `<button class="btn ghost tiny" data-act="rm-cover" data-i="${i}">Quitar foto</button>` : ''}
             <span style="flex:1"></span>
-            <button class="btn danger tiny" data-act="del-tower" data-i="${i}">Eliminar torre</button>
+            <button class="btn danger tiny" data-act="del-tower" data-i="${i}">Eliminar edificio</button>
           </div>
         </div></div>`
         )
         .join('')}
-      ${D.towers.length ? '' : '<div class="panel"><p class="muted">No hay torres cargadas.</p></div>'}`;
+      ${D.towers.length ? '' : '<div class="panel"><p class="muted">No hay edificios cargados.</p></div>'}`;
   }
 
   /* ---------- Unidades ---------- */
   function vUnits() {
-    if (!D.towers.length) return '<header><h1>Unidades</h1></header><div class="panel"><p class="muted">Primero creá una torre en la sección Torres.</p></div>';
+    if (!D.towers.length) return '<header><h1>Unidades</h1></header><div class="panel"><p class="muted">Primero creá un edificio en la sección Edificio.</p></div>';
     const t = D.towers[selTower];
     const s = stat(t.units);
     const floors = [...new Set(t.units.map((u) => u.floor))].sort((a, b) => b - a);
@@ -267,7 +290,7 @@
     return `<header><div><h1>Unidades</h1><p id="usum">${s.total} unidades · ${s.available} disponibles · ${s.reserved} reservadas · ${s.sold} vendidas</p></div>
       <div class="row-actions"><button class="btn ghost sm" data-act="gen-units">Generar unidades</button><button class="btn sm" data-act="add-unit">Nueva unidad</button></div></header>
       <div class="toolbar">
-        <label class="fld">Torre<select id="selTower">${D.towers.map((x, i) => `<option value="${i}" ${i === selTower ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+        <label class="fld">Edificio<select id="selTower">${D.towers.map((x, i) => `<option value="${i}" ${i === selTower ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
         <label class="fld">Ver<select id="selFilter">${[['all', 'Todas'], ['available', 'Disponibles'], ['reserved', 'Reservadas'], ['sold', 'Vendidas']].map(([k, l]) => `<option value="${k}" ${k === unitFilter ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <span class="grow"></span>
         ${floors.length ? `<div class="row-actions" style="align-items:end">
@@ -297,7 +320,8 @@
       <div class="dlg-head"><h2>Unidad ${esc(u.code)}</h2><button class="m-close" style="position:static" data-act="close-dlg" aria-label="Cerrar">×</button></div>
       <div class="grid4">
         ${fld('Código', p + '.code', u.code, { ph: 'Ej.: 4B' })}
-        ${fld('Piso', p + '.floor', u.floor, { type: 'number', num: 1, min: 0, max: 99 })}
+        ${fld('Piso', p + '.floor', u.floor, { type: 'number', num: 1, min: 0, max: 99, hint: '0 = planta baja' })}
+        ${fld('Bloque', p + '.block', u.block, { ph: 'Bloque delantero' })}
         ${sel('Estado', p + '.status', u.status, Object.entries(STATUS_LABEL))}
         ${fld('Tipo', p + '.type', u.type, { ph: '2 dormitorios' })}
         ${fld('Dormitorios', p + '.bedrooms', u.bedrooms, { type: 'number', num: 1, min: 0, max: 10, hint: '0 = monoambiente' })}
@@ -306,7 +330,7 @@
         ${fld('Cubierta (m²)', p + '.coveredArea', u.coveredArea, { type: 'number', num: 1, min: 0, step: '0.5' })}
         ${fld('Balcón (m²)', p + '.balcony', u.balcony, { type: 'number', num: 1, min: 0, step: '0.5' })}
         ${fld('Orientación', p + '.orientation', u.orientation, { ph: 'Norte' })}
-        ${fld('Precio', p + '.price', u.price, { type: 'number', num: 1, min: 0, step: '1000', hint: '0 muestra “Consultar”' })}
+        ${fld('Precio', p + '.price', u.price, { type: 'number', num: 1, min: 0, step: '1000', hint: 'Hoy el sitio muestra “Consultar” (ver Empresa → Mostrar precios)' })}
         ${sel('Moneda', p + '.currency', u.currency, [['USD', 'Dólares (USD)'], ['ARS', 'Pesos (ARS)']])}
         ${fld('Descripción', p + '.description', u.description, { type: 'textarea', cls: 'full', max: 600 })}
       </div>
@@ -359,7 +383,7 @@
           t.units.push({
             id: uid('u'), code, floor: fl, type: f.type, bedrooms: Number(f.beds), bathrooms: Math.max(1, Math.ceil(Number(f.beds) / 2)),
             area, coveredArea: Math.round(area * 0.88), balcony: 0, orientation: '',
-            price: Math.round((area * Number(f.ppm)) / 1000) * 1000, currency: 'USD', status: f.status, description: '', photos: [], plan: ''
+            price: Math.round((area * Number(f.ppm)) / 1000) * 1000, currency: 'USD', block: '', status: f.status, description: '', photos: [], plan: ''
           });
           n++;
         }
@@ -368,6 +392,126 @@
       dlg.close();
       render();
       toast(n ? `Se crearon ${n} unidades.` : 'No se creó ninguna: esos códigos ya existen.');
+    });
+  }
+
+  /* ---------- Cercanías ---------- */
+  function vNearby() {
+    return `<header><div><h1>Cercanías</h1><p>Lugares de la zona que se muestran en “Ubicación”, con distancia y tiempo desde el edificio.</p></div>
+      <button class="btn sm" data-act="add-near">Agregar lugar</button></header>
+      <div class="panel">${D.nearby.length ? D.nearby
+        .map((p, i) => `<div class="nbox">
+          ${fld('Lugar', `nearby.${i}.name`, p.name)}
+          ${fld('Distancia', `nearby.${i}.distance`, p.distance, { ph: '500 m' })}
+          ${fld('Tiempo', `nearby.${i}.time`, p.time, { ph: '6 min' })}
+          ${sel('Cómo', `nearby.${i}.mode`, p.mode, [['walk', 'A pie'], ['car', 'En auto']])}
+          <button class="btn danger tiny" data-act="del-near" data-i="${i}">Quitar</button>
+          ${fld('Categoría', `nearby.${i}.category`, p.category, { ph: 'Salud, Deportes…' })}
+        </div>`).join('') : '<p class="muted">Todavía no cargaste lugares.</p>'}</div>`;
+  }
+
+  /* ---------- Loteos ---------- */
+  const LO_STATUS = [['hidden', 'Oculto (no se ve en el sitio)'], ['soon', 'Próximamente (sin lotes)'], ['active', 'Publicado con lotes']];
+  function vLoteos() {
+    return `<header><div><h1>Loteos</h1><p>Cada loteo es como un edificio y cada lote como una unidad. Mientras esté en “Próximamente” se muestra una tarjeta sin lotes.</p></div>
+      <button class="btn sm" data-act="add-loteo">Nuevo loteo</button></header>
+      ${D.loteos.length ? D.loteos.map((o, i) => `<div class="panel"><div class="grid2">
+        ${fld('Nombre', `loteos.${i}.name`, o.name)}
+        ${fld('Subtítulo', `loteos.${i}.subtitle`, o.subtitle, { ph: 'Barrio boutique · ex Arroyo Dulce 2' })}
+        ${fld('Ubicación', `loteos.${i}.location`, o.location)}
+        ${sel('Estado en el sitio', `loteos.${i}.status`, o.status, LO_STATUS)}
+        ${fld('Entrega / posesión', `loteos.${i}.delivery`, o.delivery, { ph: 'Ej.: Diciembre 2027' })}
+        ${fld('Descripción', `loteos.${i}.description`, o.description, { type: 'textarea', cls: 'full', max: 900 })}
+        </div>
+        <div class="coverbox" style="margin-top:1rem">${o.image ? `<img src="${esc(o.image)}" alt="">` : ''}
+          <label class="dz">${o.image ? 'Cambiar foto' : 'Subir foto del loteo'}<input type="file" accept="image/*" data-upload="loteo" data-i="${i}"></label>
+          ${o.image ? `<button class="btn ghost tiny" data-act="rm-loteo-img" data-i="${i}">Quitar foto</button>` : ''}
+          <span class="muted">${o.lots.length} lotes cargados</span><span style="flex:1"></span>
+          <button class="btn ghost tiny" data-act="go-lots" data-i="${i}">Cargar lotes</button>
+          <button class="btn danger tiny" data-act="del-loteo" data-i="${i}">Eliminar</button></div></div>`).join('') : '<div class="panel"><p class="muted">No hay loteos.</p></div>'}`;
+  }
+
+  /* ---------- Lotes ---------- */
+  function vLots() {
+    if (!D.loteos.length) return '<header><h1>Lotes</h1></header><div class="panel"><p class="muted">Primero creá un loteo en la sección Loteos.</p></div>';
+    const o = D.loteos[selLoteo];
+    const s = stat(o.lots);
+    const list = o.lots.map((l, j) => ({ l, j })).filter(({ l }) => lotFilter === 'all' || l.status === lotFilter)
+      .sort((a, b) => (a.l.block || '').localeCompare(b.l.block || '', 'es', { numeric: true }) || String(a.l.code).localeCompare(String(b.l.code), 'es', { numeric: true }));
+    return `<header><div><h1>Lotes</h1><p id="usum">${s.total} lotes · ${s.available} disponibles · ${s.reserved} reservados · ${s.sold} vendidos${o.status !== 'active' ? ' · <b>El loteo está en “' + (o.status === 'hidden' ? 'Oculto' : 'Próximamente') + '”: cambialo a “Publicado con lotes” para que se vean.</b>' : ''}</p></div>
+      <div class="row-actions"><button class="btn ghost sm" data-act="gen-lots">Generar lotes</button><button class="btn sm" data-act="add-lot">Nuevo lote</button></div></header>
+      <div class="toolbar">
+        <label class="fld">Loteo<select id="selLoteo">${D.loteos.map((x, i) => `<option value="${i}" ${i === selLoteo ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+        <label class="fld">Ver<select id="selLotFilter">${[['all', 'Todos'], ['available', 'Disponibles'], ['reserved', 'Reservados'], ['sold', 'Vendidos']].map(([k, l]) => `<option value="${k}" ${k === lotFilter ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      </div>
+      <div class="tablewrap"><table class="t"><thead><tr><th>Lote</th><th>Manzana</th><th>m²</th><th>Frente x fondo</th><th>Precio</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${list.length ? list.map(({ l, j }) => `<tr><td><b>${esc(l.code)}</b></td><td>${esc(l.block)}</td><td>${l.area}</td><td>${l.front || '—'} x ${l.depth || '—'}</td><td>${money(l.price, l.currency)}</td>
+        <td><select class="stsel" style="--c:var(--st-${l.status})" data-path="loteos.${selLoteo}.lots.${j}.status" aria-label="Estado del lote ${esc(l.code)}">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+        <td><div class="row-actions"><button class="btn ghost tiny" data-act="edit-lot" data-j="${j}">Editar</button><button class="btn danger tiny" data-act="del-lot" data-j="${j}">Eliminar</button></div></td></tr>`).join('') : '<tr><td colspan="7" style="padding:1.4rem" class="muted">Todavía no hay lotes. Usá “Generar lotes” para crear varios de una vez, o “Nuevo lote”.</td></tr>'}
+      </tbody></table></div>`;
+  }
+
+  function lotDialog(j) {
+    const i = selLoteo;
+    const l = D.loteos[i].lots[j];
+    const p = `loteos.${i}.lots.${j}`;
+    dlg.className = 'modal adm-dlg';
+    dlg.innerHTML = `<div class="dlg-body" data-lj="${j}">
+      <div class="dlg-head"><h2>Lote ${esc(l.code)}</h2><button class="m-close" style="position:static" data-act="close-dlg" aria-label="Cerrar">×</button></div>
+      <div class="grid4">
+        ${fld('Número / código', p + '.code', l.code, { ph: '12' })}
+        ${fld('Manzana', p + '.block', l.block, { ph: 'Manzana A' })}
+        ${sel('Estado', p + '.status', l.status, Object.entries(STATUS_LABEL))}
+        ${fld('Orientación', p + '.orientation', l.orientation, { ph: 'Norte' })}
+        ${fld('Superficie (m²)', p + '.area', l.area, { type: 'number', num: 1, min: 0, step: '0.5' })}
+        ${fld('Frente (m)', p + '.front', l.front, { type: 'number', num: 1, min: 0, step: '0.1' })}
+        ${fld('Fondo (m)', p + '.depth', l.depth, { type: 'number', num: 1, min: 0, step: '0.1' })}
+        ${fld('Precio', p + '.price', l.price, { type: 'number', num: 1, min: 0, step: '1000', hint: 'Se muestra solo si activás “Mostrar precios”' })}
+        ${sel('Moneda', p + '.currency', l.currency, [['USD', 'Dólares (USD)'], ['ARS', 'Pesos (ARS)']])}
+        ${fld('Descripción', p + '.description', l.description, { type: 'textarea', cls: 'full', max: 600 })}
+      </div>
+      <div><h3 style="margin-bottom:.7rem">Fotos</h3><div class="photos">${l.photos.map((ph, k) => `<div class="pitem"><img src="${esc(ph)}" alt=""><div>
+          <button class="btn danger" data-act="lph-del" data-k="${k}" aria-label="Quitar foto">×</button></div></div>`).join('')}
+          <label class="dz">Subir fotos<input type="file" accept="image/*" multiple data-upload="lphoto"></label></div></div>
+      <div><h3 style="margin-bottom:.7rem">Plano / mensura</h3>
+        <div class="coverbox">${l.plan && !/\.pdf/i.test(l.plan) ? `<img src="${esc(l.plan)}" alt="">` : l.plan ? '<span class="muted">PDF cargado</span>' : ''}
+          <label class="dz">${l.plan ? 'Cambiar' : 'Subir'} (imagen o PDF)<input type="file" accept="image/*,application/pdf" data-upload="lplan"></label>
+          ${l.plan ? '<button class="btn ghost tiny" data-act="rm-lplan">Quitar</button>' : ''}</div></div>
+      <div class="dlg-foot"><button class="btn" data-act="close-dlg">Listo</button></div></div>`;
+    if (!dlg.open) dlg.showModal();
+  }
+
+  function genLotsDialog() {
+    dlg.className = 'modal adm-dlg';
+    dlg.innerHTML = `<form class="dlg-body" id="genLots">
+      <div class="dlg-head"><h2>Generar lotes</h2><button type="button" class="m-close" style="position:static" data-act="close-dlg" aria-label="Cerrar">×</button></div>
+      <p class="muted">Crea manzanas con lotes numerados. Después podés editar cada lote. Los códigos que ya existan en la misma manzana no se tocan.</p>
+      <div class="grid4">
+        <label class="fld">Cantidad de manzanas<input name="mz" type="number" value="3" min="1" max="26" required></label>
+        <label class="fld">Lotes por manzana<input name="per" type="number" value="12" min="1" max="60" required></label>
+        <label class="fld">Superficie (m²)<input name="area" type="number" value="600" min="1" step="0.5"></label>
+        <label class="fld">Estado inicial<select name="status">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+        <label class="fld">Frente (m)<input name="front" type="number" value="20" min="0" step="0.1"></label>
+        <label class="fld">Fondo (m)<input name="depth" type="number" value="30" min="0" step="0.1"></label>
+      </div>
+      <div class="dlg-foot"><button type="button" class="btn ghost" data-act="close-dlg">Cancelar</button><button class="btn" type="submit">Generar</button></div></form>`;
+    dlg.showModal();
+    $('#genLots').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const o = D.loteos[selLoteo];
+      const have = new Set(o.lots.map((l) => l.block + '|' + l.code));
+      let n = 0;
+      for (let m = 0; m < Number(f.mz); m++) {
+        const block = 'Manzana ' + String.fromCharCode(65 + m);
+        for (let k = 1; k <= Number(f.per); k++) {
+          if (have.has(block + '|' + k) || o.lots.length >= 800) continue;
+          o.lots.push({ id: uid('l'), code: String(k), block, area: Number(f.area), front: Number(f.front), depth: Number(f.depth), orientation: '', price: 0, currency: 'USD', status: f.status, description: '', photos: [], plan: '' });
+          n++;
+        }
+      }
+      markDirty(); dlg.close(); render();
+      toast(n ? `Se crearon ${n} lotes.` : 'No se creó ninguno: esos códigos ya existen.');
     });
   }
 
@@ -400,13 +544,16 @@
         ${fld('Frase corta', 'company.tagline', c.tagline)}
         ${fld('Título principal', 'company.heroTitle', c.heroTitle, { type: 'textarea', cls: 'full', max: 140 })}
         ${fld('Texto de apoyo', 'company.heroText', c.heroText, { type: 'textarea', cls: 'full', max: 400 })}
-        ${fld('Quiénes somos', 'company.about', c.about, { type: 'textarea', cls: 'full', max: 1500 })}
+        ${fld('Quiénes somos', 'company.about', c.about, { type: 'textarea', cls: 'full', max: 1800, hint: 'Una línea en blanco separa párrafos.' })}
+        <div class="fld full coverbox">${c.heroImage ? `<img src="${esc(c.heroImage)}" alt="">` : ''}<label class="dz">${c.heroImage ? 'Cambiar foto de portada' : 'Subir foto de portada'}<input type="file" accept="image/*" data-upload="hero"></label></div>
+        <label class="check full"><input type="checkbox" data-path="company.showPrices" ${c.showPrices ? 'checked' : ''}> Mostrar precios en el sitio (si está apagado, todas las unidades dicen “Consultar”)</label>
       </div></div>
       <div class="panel"><h3>Números destacados</h3><div class="grid3">
         ${c.stats.slice(0, 3).map((s, k) => `<div class="grid2" style="grid-template-columns:90px 1fr">${fld('Número', `company.stats.${k}.value`, s.value)}${fld('Descripción', `company.stats.${k}.label`, s.label)}</div>`).join('')}
       </div></div>
       <div class="panel"><h3>Contacto y ubicación</h3><div class="grid2">
-        ${fld('Dirección', 'company.address', c.address)}
+        ${fld('Dirección de la obra', 'company.address', c.address)}
+        ${fld('Dirección de oficinas', 'company.office', c.office)}
         ${fld('Ciudad / zona', 'company.city', c.city)}
         ${fld('Teléfono', 'company.phone', c.phone)}
         ${fld('WhatsApp', 'company.whatsapp', c.whatsapp, { hint: 'Solo números con código de país. Ej.: 5491155550142' })}
@@ -421,9 +568,9 @@
   function vTheme() {
     const t = D.theme;
     const sw = [
-      ['primary', 'Azul principal', 'Botones, avance de obra'],
-      ['dark', 'Azul oscuro', 'Textos, encabezados, pie'],
-      ['accent', 'Azul claro', 'Detalles y enlaces'],
+      ['primary', 'Color principal', 'Botones y detalles'],
+      ['dark', 'Color oscuro', 'Textos, encabezados, pie'],
+      ['accent', 'Color claro', 'Detalles y acentos'],
       ['available', 'Disponible', 'Unidades a la venta'],
       ['reserved', 'Reservada', 'Unidades con seña'],
       ['sold', 'Vendida', 'Unidades vendidas']
@@ -448,7 +595,20 @@
     let v;
     if (el.type === 'checkbox') v = el.checked;
     else if (el.hasAttribute('data-num')) v = Number(el.value) || 0;
-    else v = el.value;
+    else if (el.dataset.fmt === 'lines') v = el.value.split('\n').map((x) => x.trim()).filter(Boolean);
+    else if (el.dataset.fmt && el.dataset.fmt.startsWith('pairs:')) {
+      const keys = el.dataset.fmt.slice(6).split(',');
+      v = el.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+        const parts = l.split('|').map((x) => x.trim());
+        const o = {};
+        keys.forEach((k, n) => (o[k] = n === keys.length - 1 ? parts.slice(n).join(' | ') : parts[n] || ''));
+        return o;
+      });
+      if (el.dataset.path.endsWith('.blocks')) {
+        const old = getPath(D, el.dataset.path) || [];
+        v.forEach((b, n) => { b.image = (old[n] && old[n].image) || ''; });
+      }
+    } else v = el.value;
     setPath(D, el.dataset.path, v);
     markDirty();
     const m = el.dataset.path.match(/^towers\.(\d+)\.(progress|floors|shape)$/);
@@ -458,7 +618,9 @@
       if (m[2] === 'progress') $('#pv-' + i).textContent = v + '%';
     }
     if (el.dataset.path.startsWith('theme.')) applyTheme(D.theme);
-    if (/\.status$/.test(el.dataset.path)) {
+    if (/\.status$/.test(el.dataset.path) && /^loteos\.\d+\.lots/.test(el.dataset.path)) {
+      el.style.setProperty('--c', `var(--st-${v})`);
+    } else if (/\.status$/.test(el.dataset.path) && /^towers/.test(el.dataset.path)) {
       el.style.setProperty('--c', `var(--st-${v})`);
       const s = stat(D.towers[selTower].units);
       const u = $('#usum');
@@ -476,6 +638,12 @@
       render();
     } else if (e.target.id === 'selFilter') {
       unitFilter = e.target.value;
+      render();
+    } else if (e.target.id === 'selLoteo') {
+      selLoteo = Number(e.target.value);
+      render();
+    } else if (e.target.id === 'selLotFilter') {
+      lotFilter = e.target.value;
       render();
     }
   });
@@ -511,6 +679,27 @@
         D.towers[Number(inp.dataset.i)].image = await upload(files[0]);
         markDirty();
         render();
+      } else if (kind === 'hero') {
+        D.company.heroImage = await upload(files[0]);
+        markDirty();
+        render();
+      } else if (kind === 'gallery') {
+        const t = D.towers[Number(inp.dataset.i)];
+        t.gallery = t.gallery || [];
+        for (const f of files) if (t.gallery.length < 16) t.gallery.push(await upload(f));
+        markDirty();
+        render();
+      } else if (kind === 'loteo') {
+        D.loteos[Number(inp.dataset.i)].image = await upload(files[0]);
+        markDirty();
+        render();
+      } else if (kind === 'lphoto' || kind === 'lplan') {
+        const lj = Number($('[data-lj]', dlg).dataset.lj);
+        const l = D.loteos[selLoteo].lots[lj];
+        if (kind === 'lplan') l.plan = await upload(files[0]);
+        else for (const f of files) if (l.photos.length < 12) l.photos.push(await upload(f));
+        markDirty();
+        lotDialog(lj);
       } else {
         const j = Number($('[data-uj]', dlg).dataset.uj);
         const u = D.towers[selTower].units[j];
@@ -536,11 +725,11 @@
     const i = Number(b.dataset.i);
     const j = Number(b.dataset.j);
     const k = Number(b.dataset.k);
-    const t = D.towers[selTower];
+    const t = D.towers[selTower] || {};
 
     switch (act) {
       case 'add-tower':
-        D.towers.push({ id: uid('t'), name: 'Nueva torre', shape: 'slab', address: '', description: '', floors: 10, progress: 0, delivery: '', image: '', units: [] });
+        D.towers.push({ id: uid('t'), name: 'Nuevo edificio', shape: 'slab', address: '', description: '', floors: 10, progress: 0, delivery: '', image: '', gallery: [], highlights: [], blocks: [], finishUnits: [], finishComplex: [], floorPlans: [], units: [] });
         markDirty(); render(); break;
       case 'del-tower':
         if (confirm(`¿Eliminar ${D.towers[i].name} y todas sus unidades? Se aplica al publicar.`)) {
@@ -552,7 +741,7 @@
       case 'rm-cover': D.towers[i].image = ''; markDirty(); render(); break;
       case 'add-unit': {
         const f = t.units.length ? Math.max(...t.units.map((u) => u.floor)) : 1;
-        t.units.push({ id: uid('u'), code: '', floor: f, type: '2 dormitorios', bedrooms: 2, bathrooms: 1, area: 60, coveredArea: 52, balcony: 0, orientation: '', price: 0, currency: 'USD', status: 'available', description: '', photos: [], plan: '' });
+        t.units.push({ id: uid('u'), code: '', floor: f, type: '2 dormitorios', bedrooms: 2, bathrooms: 1, area: 60, coveredArea: 52, balcony: 0, orientation: '', block: '', price: 0, currency: 'USD', status: 'available', description: '', photos: [], plan: '' });
         markDirty(); unitDialog(t.units.length - 1); break;
       }
       case 'edit-unit': unitDialog(j); break;
@@ -584,6 +773,37 @@
       case 'del-notice':
         if (confirm('¿Eliminar este aviso?')) { D.notices.splice(i, 1); markDirty(); render(); }
         break;
+      case 'g-del': D.towers[i].gallery.splice(k, 1); markDirty(); render(); break;
+      case 'g-left':
+      case 'g-right': {
+        const g = D.towers[i].gallery;
+        const to = act === 'g-left' ? k - 1 : k + 1;
+        if (to >= 0 && to < g.length) { [g[k], g[to]] = [g[to], g[k]]; markDirty(); render(); }
+        break;
+      }
+      case 'add-near': D.nearby.push({ id: uid('np'), name: '', category: '', distance: '', time: '', mode: 'walk' }); markDirty(); render(); break;
+      case 'del-near': D.nearby.splice(i, 1); markDirty(); render(); break;
+      case 'add-loteo': D.loteos.push({ id: uid('lo'), name: 'Nuevo loteo', subtitle: '', location: '', description: '', status: 'soon', image: '', delivery: '', lots: [] }); markDirty(); render(); break;
+      case 'rm-loteo-img': D.loteos[i].image = ''; markDirty(); render(); break;
+      case 'del-loteo':
+        if (confirm(`¿Eliminar el loteo ${D.loteos[i].name} y todos sus lotes? Se aplica al publicar.`)) { D.loteos.splice(i, 1); selLoteo = 0; markDirty(); render(); }
+        break;
+      case 'go-lots': selLoteo = i; section = 'lots'; renderNav(); render(); window.scrollTo(0, 0); break;
+      case 'add-lot': {
+        const o = D.loteos[selLoteo];
+        const last = o.lots[o.lots.length - 1];
+        o.lots.push({ id: uid('l'), code: '', block: last ? last.block : 'Manzana A', area: last ? last.area : 0, front: last ? last.front : 0, depth: last ? last.depth : 0, orientation: '', price: 0, currency: 'USD', status: 'available', description: '', photos: [], plan: '' });
+        markDirty(); lotDialog(o.lots.length - 1); break;
+      }
+      case 'edit-lot': lotDialog(j); break;
+      case 'del-lot': {
+        const o = D.loteos[selLoteo];
+        if (confirm(`¿Eliminar el lote ${o.lots[j].code || ''}?`)) { o.lots.splice(j, 1); markDirty(); render(); }
+        break;
+      }
+      case 'gen-lots': genLotsDialog(); break;
+      case 'lph-del': { const lj = Number($('[data-lj]', dlg).dataset.lj); D.loteos[selLoteo].lots[lj].photos.splice(k, 1); markDirty(); lotDialog(lj); break; }
+      case 'rm-lplan': { const lj = Number($('[data-lj]', dlg).dataset.lj); D.loteos[selLoteo].lots[lj].plan = ''; markDirty(); lotDialog(lj); break; }
       case 'preset': Object.assign(D.theme, PRESETS[k][1]); applyTheme(D.theme); markDirty(); render(); break;
     }
   }

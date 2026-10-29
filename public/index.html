@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Norte Austral Desarrollos · Torres en construcción</title>
-  <meta name="description" content="Seguí el avance de obra de cada torre y elegí tu unidad con planos, fotos y precios actualizados.">
-  <meta name="theme-color" content="#0a2540">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='14' width='7' height='14' fill='%231f4fbf'/%3E%3Crect x='13' y='4' width='7' height='24' fill='%230a2540'/%3E%3Crect x='22' y='10' width='7' height='18' fill='%231f4fbf'/%3E%3C/svg%3E">
+  <title>Quinzo 1 · Departamentos y lofts en Luján</title>
+  <meta name="description" content="Quinzo 1: 14 departamentos y un local comercial en el casco urbano de Luján. Planos, fotos, terminaciones y ubicación. Consultá por las unidades.">
+  <meta name="theme-color" content="#2b2724">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232b2724'/%3E%3Ctext x='16' y='24' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='24' fill='%23fff'%3EQ%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
@@ -20,40 +20,36 @@
       <a class="brand" href="#inicio" id="brand"></a>
       <button class="menu-btn" id="menuBtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav"><span></span></button>
       <nav class="nav" id="nav" aria-label="Principal">
-        <a href="#obras">Obras</a>
+        <a href="#edificio">Edificio</a>
         <a href="#unidades">Unidades</a>
-        <a href="#avisos">Avisos</a>
-        <a href="#nosotros">Nosotros</a>
+        <a href="#terminaciones">Terminaciones</a>
         <a href="#ubicacion">Ubicación</a>
+        <a href="#loteos" id="navLoteos">Loteos</a>
+        <a href="#avisos" id="navAvisos" hidden>Avisos</a>
         <a class="btn sm" href="#contacto">Consultar</a>
       </nav>
     </div>
   </header>
 
   <main id="inicio">
-    <section class="hero" aria-labelledby="heroTitle">
-      <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <h1 id="heroTitle"></h1>
-          <p id="heroText"></p>
-          <div class="hero-cta">
-            <a class="btn" href="#unidades">Ver unidades</a>
-            <a class="btn ghost" href="#obras">Avance de obra</a>
-          </div>
+    <section class="hero" id="hero" aria-labelledby="heroTitle">
+      <div class="hero-bg" id="heroBg"></div>
+      <div class="wrap hero-copy">
+        <p class="eyebrow" id="heroEyebrow"></p>
+        <h1 id="heroTitle"></h1>
+        <p id="heroText"></p>
+        <div class="hero-cta">
+          <a class="btn light" href="#unidades">Ver unidades</a>
+          <a class="btn ghost-light" href="#contacto">Consultar</a>
         </div>
-        <div class="skyline" id="skyline" aria-label="Estado de avance de cada torre"></div>
       </div>
     </section>
 
-    <section class="facts" aria-label="Números de la empresa"><div class="wrap" id="facts"></div></section>
+    <section class="facts" aria-label="Números del proyecto"><div class="wrap" id="facts"></div></section>
 
-    <section class="sec" id="obras">
+    <section class="sec" id="edificio">
       <div class="wrap">
-        <div class="sec-head">
-          <h2>Obras en curso</h2>
-          <p>La silueta de cada edificio se completa a medida que avanza la obra. Actualizamos el porcentaje todos los meses.</p>
-        </div>
-        <div id="obrasList"><div class="skeleton">Cargando obras…</div></div>
+        <div id="obrasList"><div class="skeleton">Cargando…</div></div>
       </div>
     </section>
 
@@ -61,9 +57,9 @@
       <div class="wrap">
         <div class="sec-head">
           <h2>Elegí tu unidad</h2>
-          <p>Cada recuadro es una unidad del edificio. Tocá una para ver fotos, plano, superficie y precio.</p>
+          <p>Cada recuadro es una unidad del edificio. Tocá una para ver fotos, plano y medidas. Consultanos por disponibilidad y formas de pago.</p>
         </div>
-        <div class="tabs" id="tabs" role="tablist" aria-label="Torres"></div>
+        <div class="tabs" id="tabs" role="tablist" aria-label="Edificios"></div>
         <div class="filters">
           <div class="seg" id="statusSeg" role="group" aria-label="Filtrar por estado"></div>
           <label class="sr" for="bedSel">Dormitorios</label>
@@ -76,46 +72,58 @@
       </div>
     </section>
 
-    <section class="sec" id="avisos">
-      <div class="wrap">
-        <div class="sec-head"><h2>Avisos</h2><p>Novedades de obra, promociones y fechas de visita.</p></div>
-        <div id="notices"></div>
-      </div>
+    <section class="sec" id="terminaciones">
+      <div class="wrap" id="finishes"></div>
     </section>
 
-    <section class="sec wash" id="nosotros">
-      <div class="wrap about">
-        <div>
-          <h2 id="aboutTitle">Quiénes somos</h2>
-          <p id="aboutText" style="margin-top:1.4rem"></p>
+    <section class="sec wash" id="ubicacion">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2>En el corazón de Luján</h2>
+          <p>Quinzo 1 está a pasos de la plaza y la Municipalidad, y a minutos de la Basílica. Las distancias son aproximadas, desde la puerta del edificio.</p>
         </div>
-        <div class="about-art" id="aboutArt"></div>
-      </div>
-    </section>
-
-    <section class="sec" id="ubicacion">
-      <div class="wrap">
-        <div class="sec-head"><h2>Dónde estamos</h2></div>
         <div class="loc">
           <div>
             <address id="locInfo"></address>
           </div>
           <div class="map" id="map"></div>
         </div>
+        <div class="nearby" id="nearby"></div>
+      </div>
+    </section>
+
+    <section class="sec" id="loteos">
+      <div class="wrap" id="loteosWrap"></div>
+    </section>
+
+    <section class="sec wash" id="avisos" hidden>
+      <div class="wrap">
+        <div class="sec-head"><h2>Avisos</h2><p>Novedades, promociones y fechas de visita.</p></div>
+        <div id="notices"></div>
+      </div>
+    </section>
+
+    <section class="sec" id="nosotros">
+      <div class="wrap about">
+        <div>
+          <h2 id="aboutTitle">Quinzo</h2>
+          <p id="aboutText" style="margin-top:1.4rem"></p>
+        </div>
+        <div class="about-art" id="aboutArt"></div>
       </div>
     </section>
 
     <section class="sec wash" id="contacto">
       <div class="wrap contact">
         <div>
-          <h2>Consultá por una unidad</h2>
-          <p class="lead">Contanos qué buscás y un asesor te responde con disponibilidad y formas de pago.</p>
+          <h2>Consultá por las unidades</h2>
+          <p class="lead">Contanos qué buscás y un asesor te responde con disponibilidad, precios y formas de pago.</p>
         </div>
         <form class="cf" id="cf" novalidate>
           <label>Nombre<input name="name" autocomplete="name" required></label>
           <label>Teléfono<input name="phone" type="tel" autocomplete="tel" required></label>
-          <label class="full">Torre de interés<select name="tower" id="cfTower"></select></label>
-          <label class="full">Mensaje<textarea name="msg" placeholder="Ej.: busco 2 dormitorios con balcón, en piso alto"></textarea></label>
+          <label class="full">Me interesa<select name="tower" id="cfTower"></select></label>
+          <label class="full">Mensaje<textarea name="msg" placeholder="Ej.: busco un departamento de 2 dormitorios con balcón"></textarea></label>
           <div class="full"><button class="btn" type="submit">Enviar por WhatsApp</button></div>
           <p class="note full" id="cfNote"></p>
         </form>

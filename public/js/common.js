@@ -7,8 +7,10 @@
 
   const STATUS_LABEL = { available: 'Disponible', reserved: 'Reservada', sold: 'Vendida' };
 
+  const opts = { showPrices: false };
+
   function money(n, cur) {
-    if (!n) return 'Consultar';
+    if (!n || !opts.showPrices) return 'Consultar';
     return (cur === 'ARS' ? '$ ' : 'USD ') + Math.round(n).toLocaleString('es-AR');
   }
 
@@ -95,5 +97,5 @@
     return body;
   }
 
-  window.C = { NS, esc, STATUS_LABEL, money, fmtDate, applyTheme, SHAPES, SHAPE_NAMES, towerSVG, stat, api };
+  window.C = { opts, NS, esc, STATUS_LABEL, money, fmtDate, applyTheme, SHAPES, SHAPE_NAMES, towerSVG, stat, api };
 })();

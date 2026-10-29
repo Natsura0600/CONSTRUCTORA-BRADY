@@ -13,15 +13,15 @@ body.adm { background: var(--wash); font-size: 1rem; }
 
 /* Layout */
 #app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100dvh; }
-.side { background: var(--dark); color: #cfe0fb; padding: 1.4rem 1rem; display: flex; flex-direction: column; gap: 1.6rem; position: sticky; top: 0; height: 100dvh; }
+.side { background: var(--dark); color: #e6ddd0; padding: 1.4rem 1rem; display: flex; flex-direction: column; gap: 1.6rem; position: sticky; top: 0; height: 100dvh; }
 .side .brand { color: #fff; padding: 0 .5rem; }
 .side .brand-mark i:nth-child(1), .side .brand-mark i:nth-child(3) { background: var(--accent); }
 .side .brand-mark i:nth-child(2) { background: #fff; }
 #sideNav { display: grid; gap: 2px; }
-#sideNav button { text-align: left; background: none; border: 0; color: #cfe0fb; padding: .65rem .8rem; border-radius: 4px; cursor: pointer; font-weight: 500; }
+#sideNav button { text-align: left; background: none; border: 0; color: #e6ddd0; padding: .65rem .8rem; border-radius: 4px; cursor: pointer; font-weight: 500; }
 #sideNav button:hover { background: rgba(255,255,255,.08); }
 #sideNav button[aria-current="page"] { background: var(--primary); color: #fff; }
-.side .link { margin-top: auto; background: none; border: 0; color: #9db8e6; text-align: left; padding: .6rem .8rem; cursor: pointer; }
+.side .link { margin-top: auto; background: none; border: 0; color: #b9ac9c; text-align: left; padding: .6rem .8rem; cursor: pointer; }
 .side .link:hover { color: #fff; }
 .main { padding: 2rem clamp(1rem, 3vw, 2.6rem) 7rem; min-width: 0; }
 .main > #view > header { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
@@ -29,7 +29,7 @@ body.adm { background: var(--wash); font-size: 1rem; }
 .banner { background: #fff4d6; border: 1px solid #ecd48a; color: #5a4300; padding: .8rem 1rem; border-radius: 4px; margin-bottom: 1.2rem; }
 .banner.bad { background: #fde8e6; border-color: #f0b8b3; color: #7a1c14; }
 
-.savebar { position: fixed; left: 240px; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: .8rem clamp(1rem, 3vw, 2.6rem); display: flex; align-items: center; gap: .8rem; justify-content: flex-end; z-index: 20; box-shadow: 0 -6px 20px rgba(10,37,64,.07); }
+.savebar { position: fixed; left: 240px; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: .8rem clamp(1rem, 3vw, 2.6rem); display: flex; align-items: center; gap: .8rem; justify-content: flex-end; z-index: 20; box-shadow: 0 -6px 20px rgba(43,39,36,.07); }
 .savebar span { margin-right: auto; font-weight: 600; }
 
 /* Paneles */
@@ -71,7 +71,7 @@ body.adm { background: var(--wash); font-size: 1rem; }
 .toolbar .grow { flex: 1; }
 .tablewrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
 table.t { width: 100%; border-collapse: collapse; font-size: .95rem; min-width: 760px; }
-table.t th { text-align: left; font-weight: 600; color: var(--muted); font-size: .85rem; padding: .7rem .8rem; border-bottom: 1px solid var(--line); background: #fafcff; white-space: nowrap; }
+table.t th { text-align: left; font-weight: 600; color: var(--muted); font-size: .85rem; padding: .7rem .8rem; border-bottom: 1px solid var(--line); background: #fbf9f5; white-space: nowrap; }
 table.t td { padding: .5rem .8rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
 table.t tr:last-child td { border-bottom: 0; }
 .stsel { border: 1.5px solid var(--line); border-left: 8px solid var(--c); border-radius: 4px; padding: .35rem .5rem; background: #fff; font-weight: 600; }
@@ -121,3 +121,14 @@ dialog.modal.adm-dlg { width: min(860px, 100% - 1.5rem); }
   .grid2, .grid3, .grid4 { grid-template-columns: minmax(0, 1fr); }
   .sumrow { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
 }
+
+/* Siluetas de torre (vista previa) */
+.tower-svg { color: var(--dark); overflow: visible; }
+.tw-empty { fill: #ebe4d9; }
+.tw-fill { fill: var(--primary); }
+.tw-edge { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
+.tw-crane { transform-origin: center bottom; }
+.side .brand-mark { background: #fff; color: var(--dark); }
+.nbox { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .8rem; align-items: end; padding: .8rem 0; border-top: 1px solid var(--line); }
+.nbox:first-of-type { border-top: 0; }
+@media (max-width: 900px) { .nbox { grid-template-columns: 1fr 1fr; } }
