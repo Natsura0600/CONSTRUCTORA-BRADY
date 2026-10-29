@@ -18,7 +18,8 @@
       D.loteos = D.loteos || [];
       boot();
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error('Quinzo: error al cargar', err);
       $('#obrasList').innerHTML = '<div class="skeleton">No pudimos cargar los datos. Probá recargar la página.</div>';
     });
 
