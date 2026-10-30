@@ -17,7 +17,7 @@
     <form id="loginForm" class="login-card">
       <span class="brand-mark" aria-hidden="true">Q</span>
       <h1>Panel de administración</h1>
-      <p class="muted">Ingresá con la contraseña del sitio para editar torres, unidades y avisos.</p>
+      <p class="muted">Escribí la contraseña para modificar la página: edificios, unidades, fotos y avisos.</p>
       <label>Contraseña<input type="password" id="pw" autocomplete="current-password" required autofocus></label>
       <p class="err" id="loginErr" role="alert"></p>
       <button class="btn" type="submit">Ingresar</button>
@@ -29,16 +29,16 @@
     <aside class="side">
       <a class="brand" href="/" title="Ver el sitio"><span class="brand-mark" aria-hidden="true">Q</span><span id="sideName">Panel</span></a>
       <nav id="sideNav" aria-label="Secciones"></nav>
-      <button class="link" id="logout">Cerrar sesión</button>
+      <button class="link" id="logout">Salir del panel</button>
     </aside>
     <main class="main">
       <div class="banner" id="banner" hidden></div>
       <div id="view"></div>
     </main>
     <div class="savebar" id="savebar" hidden>
-      <span>Tenés cambios sin publicar</span>
-      <button class="btn ghost sm" id="discard">Descartar</button>
-      <button class="btn sm" id="save">Publicar cambios</button>
+      <span>Hiciste cambios. Todavía no están en la página: tocá “Publicar cambios”.</span>
+      <button class="btn ghost" id="discard">Descartar cambios</button>
+      <button class="btn" id="save">Publicar cambios</button>
     </div>
   </div>
 

@@ -3,7 +3,7 @@
   const $ = (s, r = document) => r.querySelector(s);
 
   let D = null;
-  const state = { towerId: null, status: 'all', beds: 'all', showAll: false, lot: {} };
+  const state = { locTower: null, towerId: null, status: 'all', beds: 'all', showAll: false, lot: {} };
 
   const floorName = (f) => (f === 0 ? 'PB' : f + '°');
   const floorLong = (f) => (f === 0 ? 'Planta baja' : 'Piso ' + f);
@@ -33,11 +33,11 @@
     renderTopbar();
     renderFacts();
     renderBuildings();
+    fixNavLabels();
     state.towerId = (D.towers[0] || {}).id;
     renderExplorer();
     renderFinishes();
     renderLocation();
-    renderNearby();
     renderLoteos();
     renderNotices();
     renderAbout();
@@ -60,7 +60,8 @@
     const img = c.heroImage || (D.towers[0] || {}).image || '';
     if (img) $('#heroBg').style.backgroundImage = `url("${img.replace(/"/g, '%22')}")`;
     else $('#hero').classList.add('no-img');
-    $('#heroEyebrow').textContent = [c.address, (c.city || '').split(',')[0]].filter(Boolean).join(' · ');
+    const t0 = D.towers.length === 1 ? D.towers[0] : null;
+    $('#heroEyebrow').textContent = [t0 ? (t0.address || c.address) : '', (c.city || '').split(',')[0]].filter(Boolean).join(' · ');
     $('#heroTitle').textContent = c.heroTitle || c.name;
     $('#heroText').textContent = c.heroText || c.tagline || '';
   }
@@ -111,28 +112,41 @@
     if (e.key === 'ArrowRight') $('#lbNext').click();
   });
 
-  /* ---------- Edificio ---------- */
+  /* ---------- Edificios ---------- */
+  const ICON = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="3" width="14" height="18"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M11 21v-3h2v3"/></svg>';
+  function fixNavLabels() {
+    const a = document.querySelector('a[href="#edificio"]');
+    if (a) a.textContent = D.towers.length > 1 ? 'Edificios' : 'Edificio';
+  }
+  function symbol(t, i) {
+    return `<div class="b-symbol" role="img" aria-label="Ilustración de ${esc(t.name)}">${window.C.towerSVG(t, 'pub' + i)}<span>Fotos próximamente</span></div>`;
+  }
   function renderBuildings() {
     if (!D.towers.length) {
       $('#obrasList').innerHTML = '<p class="empty">Pronto vamos a publicar nuestros proyectos.</p>';
       return;
     }
-    $('#obrasList').innerHTML = D.towers
+    const multi = D.towers.length > 1;
+    const head = multi
+      ? `<div class="sec-head"><h2>Nuestros edificios</h2><p>${D.towers.length} proyectos. Elegí uno para ver sus fotos, plantas y características.</p></div>`
+      : '';
+    $('#obrasList').innerHTML = head + D.towers
       .map((t, i) => {
         const s = stat(t.units);
-        const gal = (t.gallery || []).map((src, k) => ({ src, label: t.name }));
+        const gal = (t.gallery || []).map((src) => ({ src, label: t.name }));
         const plans = t.floorPlans || [];
+        const meta = [
+          t.floors ? `<div><dt>Pisos</dt><dd>${t.floors} + PB</dd></div>` : '',
+          `<div><dt>Unidades</dt><dd>${s.total}</dd></div>`,
+          `<div><dt>Entrega</dt><dd>${esc(t.delivery || 'A confirmar')}</dd></div>`
+        ].join('');
         return `<article class="obra" id="obra-${esc(t.id)}">
           <header class="b-head">
-            <div><p class="eyebrow dark">El edificio</p><h2>${esc(t.name)}</h2><p class="obra-addr">${esc(t.address)}</p></div>
-            <dl class="obra-meta">
-              <div><dt>Pisos</dt><dd>${t.floors} + PB</dd></div>
-              <div><dt>Unidades</dt><dd>${s.total}</dd></div>
-              <div><dt>Entrega</dt><dd>${esc(t.delivery || 'A confirmar')}</dd></div>
-            </dl>
+            <div>${t.tag ? `<p class="eyebrow dark">${esc(t.tag)}</p>` : ''}<h2>${esc(t.name)}</h2>${t.address ? `<p class="obra-addr">${esc(t.address)}</p>` : ''}</div>
+            <dl class="obra-meta">${meta}</dl>
           </header>
-          <div class="b-main">
-            ${t.image ? `<button class="b-img" data-gal="${i}" data-k="0" aria-label="Ampliar foto"><img src="${esc(t.image)}" alt="Render de ${esc(t.name)}" loading="lazy"></button>` : ''}
+          <div class="b-main ${t.image ? '' : 'no-photo'}">
+            ${t.image ? `<button class="b-img" data-gal="${i}" data-k="0" aria-label="Ampliar foto"><img src="${esc(t.image)}" alt="Render de ${esc(t.name)}" loading="lazy"></button>` : symbol(t, i)}
             <div class="b-text">${t.description ? `<p class="lead">${esc(t.description)}</p>` : ''}
               ${t.progress > 0 ? `<div class="progress"><div class="progress-top"><span>Avance de obra</span><b>${t.progress}%</b></div><div class="bar"><i style="--w:${t.progress}%"></i></div></div>` : ''}
             </div>
@@ -162,25 +176,28 @@
 
   /* ---------- Terminaciones ---------- */
   function renderFinishes() {
-    const t = D.towers[0];
+    const list = D.towers.filter((t) => (t.finishUnits || []).length || (t.finishComplex || []).length);
     const el = $('#finishes');
-    if (!t || (!(t.finishUnits || []).length && !(t.finishComplex || []).length)) {
+    if (!list.length) {
       $('#terminaciones').hidden = true;
-      document.querySelector('a[href="#terminaciones"]').hidden = true;
+      const nav = document.querySelector('a[href="#terminaciones"]');
+      if (nav) nav.hidden = true;
       return;
     }
-    el.innerHTML = `<div class="sec-head"><h2>Construcción y terminaciones</h2><p>Materiales de primera línea y procesos constructivos auditados por CUBI.</p></div>
+    const multi = list.length > 1;
+    el.innerHTML = `<div class="sec-head"><h2>Construcción y terminaciones</h2><p>Materiales de primera línea y procesos constructivos auditados por CUBI.</p></div>` +
+      list.map((t) => `${multi ? `<h3 class="fin-name">${esc(t.name)}</h3>` : ''}
       <div class="fin">
         <div>
-          <h3 class="sub">Detalle de terminación de unidades</h3>
-          <dl class="fin-list">${(t.finishUnits || []).map((f) => `<div><dt>${esc(f.title)}</dt><dd>${esc(f.text)}</dd></div>`).join('')}</dl>
+          ${(t.finishUnits || []).length ? `<h3 class="sub">Detalle de terminación de unidades</h3>
+          <dl class="fin-list">${t.finishUnits.map((f) => `<div><dt>${esc(f.title)}</dt><dd>${esc(f.text)}</dd></div>`).join('')}</dl>` : ''}
         </div>
-        <aside class="fin-complex">
+        ${(t.finishComplex || []).length ? `<aside class="fin-complex">
           <h3 class="sub">Terminaciones generales del complejo</h3>
           <p class="muted">El complejo consta de:</p>
-          <ul>${(t.finishComplex || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
-        </aside>
-      </div>`;
+          <ul>${t.finishComplex.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+        </aside>` : ''}
+      </div>`).join('');
   }
 
   /* ---------- Explorador de unidades ---------- */
@@ -261,7 +278,7 @@
           ? `<ul class="ulist">${shown
               .map(
                 (u) => `<li><button class="urow" data-u="${esc(u.id)}">
-                  <img src="${esc(u.photos[0] || '')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+                  ${u.photos[0] ? `<img src="${esc(u.photos[0])}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;u-ph&quot;></span>'">` : '<span class="u-ph" aria-hidden="true"></span>'}
                   <span><span class="u-title">${esc(uTitle(u))} · ${esc(u.type)}</span><br><span class="u-sub">${floorLong(u.floor)} · ${fmtArea(u.area)}${u.block ? ' · ' + esc(u.block) : ''}</span></span>
                   <span class="u-right"><span class="u-price">${money(u.price, u.currency)}</span><br><span class="chip s-${u.status}">${STATUS_LABEL[u.status]}</span></span>
                 </button></li>`
@@ -417,8 +434,19 @@
   /* ---------- Ubicación y cercanías ---------- */
   function renderLocation() {
     const c = D.company;
+    if (!D.towers.find((t) => t.id === state.locTower)) state.locTower = (D.towers[0] || {}).id;
+    const t = D.towers.find((x) => x.id === state.locTower) || {};
+    $('#locTitle').textContent = c.locationTitle || 'Ubicación';
+    $('#locText').textContent = t.locationText || 'Las distancias son aproximadas, desde la puerta del edificio.';
+    const tabs = $('#locTabs');
+    tabs.hidden = D.towers.length < 2;
+    tabs.innerHTML = D.towers.length > 1
+      ? D.towers.map((x) => `<button class="tab" role="tab" aria-selected="${x.id === t.id}" data-lt="${esc(x.id)}">${esc(x.name)}</button>`).join('')
+      : '';
+    const lat = Number(t.lat) || Number(c.lat) || 0;
+    const lng = Number(t.lng) || Number(c.lng) || 0;
     const rows = [
-      ['Ubicación de la obra', `${esc(c.address)}${c.city ? '<br>' + esc(c.city) : ''}`],
+      [D.towers.length > 1 ? 'Dirección del edificio' : 'Ubicación de la obra', `${esc(t.address || c.address)}${c.city ? '<br>' + esc(c.city) : ''}`],
       c.office && ['Oficinas', esc(c.office)],
       c.hours && ['Horarios de atención', esc(c.hours)],
       c.phone && ['Teléfono', `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a>`],
@@ -426,17 +454,32 @@
     ].filter(Boolean);
     $('#locInfo').innerHTML =
       rows.map(([a, b]) => `<div><dt class="muted" style="font-size:.88rem">${a}</dt><dd style="margin:0;font-weight:700">${b}</dd></div>`).join('') +
-      `<a class="btn ghost sm" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" rel="noopener" style="justify-self:start">Cómo llegar</a>`;
-    const d1 = 0.006, d2 = 0.0034;
-    const bbox = [c.lng - d1, c.lat - d2, c.lng + d1, c.lat + d2].join('%2C');
-    $('#map').innerHTML = `<iframe title="Mapa de ubicación de ${esc(c.name)}" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${c.lat}%2C${c.lng}"></iframe>`;
+      (lat && lng ? `<a class="btn ghost sm" href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" style="justify-self:start">Cómo llegar</a>` : '');
+    if (lat && lng) {
+      const d1 = 0.006, d2 = 0.0034;
+      const bbox = [lng - d1, lat - d2, lng + d1, lat + d2].join('%2C');
+      $('#map').hidden = false;
+      $('#map').innerHTML = `<iframe title="Mapa de ubicación de ${esc(t.name || c.name)}" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}"></iframe>`;
+    } else {
+      $('#map').hidden = true;
+      $('#map').innerHTML = '';
+    }
+    renderNearby(t);
   }
+  $('#locTabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-lt]');
+    if (!b) return;
+    state.locTower = b.dataset.lt;
+    renderLocation();
+  });
 
-  function renderNearby() {
+  function renderNearby(t) {
     const el = $('#nearby');
-    if (!D.nearby.length) { el.hidden = true; return; }
-    el.innerHTML = `<h3 class="sub">Cerca de ${esc(D.company.name)}</h3>
-      <ul class="n-list">${D.nearby
+    const list = D.nearby.filter((p) => !p.towerId || p.towerId === t.id);
+    if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = `<h3 class="sub">Cerca de ${esc(t.name || D.company.name)}</h3>
+      <ul class="n-list">${list
         .map(
           (p) => `<li><div><b>${esc(p.name)}</b><span>${esc(p.category)}</span></div>
           <div class="n-dist"><b>${esc(p.distance)}</b><span>${esc(p.time)} ${p.mode === 'car' ? 'en auto' : 'a pie'}</span></div></li>`
@@ -527,7 +570,7 @@
     $('#aboutText').outerHTML = `<div id="aboutText" class="about-text" style="margin-top:1.4rem">${paras(c.about)}</div>`;
     const t = D.towers[0];
     $('#aboutArt').innerHTML =
-      (t && t.gallery && t.gallery[1] ? `<img src="${esc(t.gallery[1])}" alt="${esc(t.name)}" loading="lazy">` : '') +
+      (() => { const src = (t && ((t.gallery && t.gallery[1]) || t.image)) || c.heroImage; return src ? `<img src="${esc(src)}" alt="${esc(t ? t.name : c.name)}" loading="lazy">` : ''; })() +
       `<ul>${c.stats.filter((s) => s.value).map((s) => `<li><b>${esc(s.value)}</b><span>${esc(s.label)}</span></li>`).join('')}</ul>`;
   }
 
@@ -549,7 +592,7 @@
     });
     if (c.whatsapp) {
       const w = $('#waFloat');
-      w.href = waLink('Hola, quiero consultar por las unidades de Quinzo.');
+      w.href = waLink('Hola, quiero consultar por las unidades de ' + c.name + '.');
       w.target = '_blank';
       w.rel = 'noopener';
       w.hidden = false;
