@@ -777,7 +777,7 @@
     return `<header><div><h1>Mi empresa</h1><p>Los datos generales que se ven en toda la página.</p></div></header>
       <div class="panel"><h2>Portada (lo primero que se ve)</h2><div class="grid2">
         ${fld('Nombre de la empresa', 'company.name', c.name, { maxlen: 80 })}
-        ${fld('Frase corta', 'company.tagline', c.tagline, { ph: 'Ej.: Viví la mejor vista de Luján', maxlen: 160 })}
+        ${fld('Frase corta', 'company.tagline', c.tagline, { ph: 'Ej.: Viví en el corazón de Luján', maxlen: 160 })}
         ${fld('Título grande de la portada', 'company.heroTitle', c.heroTitle, { type: 'textarea', cls: 'full', rows: 2, maxlen: 140 })}
         ${fld('Texto debajo del título', 'company.heroText', c.heroText, { type: 'textarea', cls: 'full', rows: 3, maxlen: 400 })}
       </div>
