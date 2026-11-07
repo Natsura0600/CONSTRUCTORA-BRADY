@@ -146,17 +146,17 @@
             <dl class="obra-meta">${meta}</dl>
           </header>
           <div class="b-main ${t.image ? '' : 'no-photo'}">
-            ${t.image ? `<button class="b-img" data-gal="${i}" data-k="0" aria-label="Ampliar foto"><img src="${esc(t.image)}" alt="Render de ${esc(t.name)}" loading="lazy"></button>` : symbol(t, i)}
+            ${t.image ? `<button class="b-img" data-gal="${i}" data-k="0" aria-label="Ampliar foto"><img src="${esc(t.image)}" alt="Render de ${esc(t.name)}" loading="lazy" decoding="async"></button>` : symbol(t, i)}
             <div class="b-text">${t.description ? `<p class="lead">${esc(t.description)}</p>` : ''}
               ${t.progress > 0 ? `<div class="progress"><div class="progress-top"><span>Avance de obra</span><b>${t.progress}%</b></div><div class="bar"><i style="--w:${t.progress}%"></i></div></div>` : ''}
             </div>
           </div>
           ${(t.highlights || []).length ? `<div class="hl">${t.highlights.map((h) => `<div class="hl-i"><h3>${esc(h.title)}</h3><p>${esc(h.text)}</p></div>`).join('')}</div>` : ''}
           ${(t.blocks || []).length ? `<div class="blocks"><h3 class="sub">Tipología</h3><div class="blocks-grid">${t.blocks.map((b, n) => `<div class="blk">
-              ${b.image ? `<img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy">` : ''}
+              ${b.image ? `<img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async">` : ''}
               <div><span class="num">/ 0${n + 1}</span><h3>${esc(b.name)}</h3><p>${esc(b.text)}</p>${b.levels ? `<p class="levels">${esc(b.levels)}</p>` : ''}</div></div>`).join('')}</div></div>` : ''}
-          ${gal.length ? `<div class="gal"><h3 class="sub">Galería</h3><div class="gal-row">${gal.map((g, k) => `<button data-gal="${i}" data-k="${k}" aria-label="Ver foto ${k + 1}"><img src="${esc(g.src)}" alt="" loading="lazy"></button>`).join('')}</div></div>` : ''}
-          ${plans.length ? `<div class="gal"><h3 class="sub">Plantas</h3><div class="plans-row">${plans.map((p, k) => `<button data-plan="${i}" data-k="${k}"><img src="${esc(p.src)}" alt="" loading="lazy"><span>${esc(p.label)}</span></button>`).join('')}</div></div>` : ''}
+          ${gal.length ? `<div class="gal"><h3 class="sub">Galería</h3><div class="gal-row">${gal.map((g, k) => `<button data-gal="${i}" data-k="${k}" aria-label="Ver foto ${k + 1}"><img src="${esc(g.src)}" alt="" loading="lazy" decoding="async"></button>`).join('')}</div></div>` : ''}
+          ${plans.length ? `<div class="gal"><h3 class="sub">Plantas</h3><div class="plans-row">${plans.map((p, k) => `<button data-plan="${i}" data-k="${k}"><img src="${esc(p.src)}" alt="" loading="lazy" decoding="async"><span>${esc(p.label)}</span></button>`).join('')}</div></div>` : ''}
         </article>`;
       })
       .join('');
@@ -278,7 +278,7 @@
           ? `<ul class="ulist">${shown
               .map(
                 (u) => `<li><button class="urow" data-u="${esc(u.id)}">
-                  ${u.photos[0] ? `<img src="${esc(u.photos[0])}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;u-ph&quot;></span>'">` : '<span class="u-ph" aria-hidden="true"></span>'}
+                  ${u.photos[0] ? `<img src="${esc(u.photos[0])}" alt="" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;u-ph&quot;></span>'">` : '<span class="u-ph" aria-hidden="true"></span>'}
                   <span><span class="u-title">${esc(uTitle(u))} · ${esc(u.type)}</span><br><span class="u-sub">${floorLong(u.floor)} · ${fmtArea(u.area)}${u.block ? ' · ' + esc(u.block) : ''}</span></span>
                   <span class="u-right"><span class="u-price">${money(u.price, u.currency)}</span><br><span class="chip s-${u.status}">${STATUS_LABEL[u.status]}</span></span>
                 </button></li>`
@@ -510,7 +510,7 @@
   function soonCard(lo) {
     const msg = `Hola, quiero que me avisen cuando salgan a la venta los lotes de ${lo.name}.`;
     return `<article class="loteo soon">
-      <div class="lo-art ${lo.image ? '' : 'ph'}">${lo.image ? `<img src="${esc(lo.image)}" alt="${esc(lo.name)}" loading="lazy">` : '<span aria-hidden="true">Q</span>'}</div>
+      <div class="lo-art ${lo.image ? '' : 'ph'}">${lo.image ? `<img src="${esc(lo.image)}" alt="${esc(lo.name)}" loading="lazy" decoding="async">` : '<span aria-hidden="true">Q</span>'}</div>
       <div class="lo-body">
         <span class="badge">Próximamente</span>
         <h3>${esc(lo.name)}</h3>
@@ -570,7 +570,7 @@
     $('#aboutText').outerHTML = `<div id="aboutText" class="about-text" style="margin-top:1.4rem">${paras(c.about)}</div>`;
     const t = D.towers[0];
     $('#aboutArt').innerHTML =
-      (() => { const src = (t && ((t.gallery && t.gallery[1]) || t.image)) || c.heroImage; return src ? `<img src="${esc(src)}" alt="${esc(t ? t.name : c.name)}" loading="lazy">` : ''; })() +
+      (() => { const src = (t && ((t.gallery && t.gallery[1]) || t.image)) || c.heroImage; return src ? `<img src="${esc(src)}" alt="${esc(t ? t.name : c.name)}" loading="lazy" decoding="async">` : ''; })() +
       `<ul>${c.stats.filter((s) => s.value).map((s) => `<li><b>${esc(s.value)}</b><span>${esc(s.label)}</span></li>`).join('')}</ul>`;
   }
 
