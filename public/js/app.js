@@ -603,7 +603,8 @@
     const c = D.company;
     $('#footer').innerHTML = `<div><b>${esc(c.name)}</b><br>${esc(c.tagline)}</div>
       <div>${esc(c.office || c.address)}${c.city && !c.office ? ', ' + esc(c.city) : ''}${c.phone ? '<br><a href="tel:' + esc(c.phone.replace(/[^\d+]/g, '')) + '">' + esc(c.phone) + '</a>' : ''}</div>
-      <div><a href="/admin">Acceso interno</a></div>`;
+      <div><a href="/admin">Acceso interno</a></div>
+      <p class="credit">Sitio desarrollado por <a href="https://picturewebdev.vercel.app" target="_blank" rel="noopener">Picture Web Dev</a></p>`;
   }
 
   /* ---------- Navegación y observadores ---------- */
